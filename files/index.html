@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird - Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #4ec0ca 0%, #87ceeb 100%);
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            border: 3px solid #000;
+            border-radius: 10px;
+            background: #4ec0ca;
+            cursor: pointer;
+        }
+        
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        #startScreen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0px #000;
+        }
+        
+        #startScreen p, #gameOverScreen p {
+            font-size: 18px;
+            margin: 10px;
+            text-align: center;
+        }
+        
+        button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            background: #f39c12;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #c87f0a;
+            transition: all 0.1s;
+        }
+        
+        button:hover {
+            background: #e67e22;
+        }
+        
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #c87f0a;
+        }
+        
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 3px 3px 0px #000;
+            z-index: 10;
+        }
+        
+        #highScore {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: white;
+            text-shadow: 2px 2px 0px #000;
+            z-index: 10;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div id="score" class="hidden">0</div>
+        <div id="highScore" class="hidden">Best: 0</div>
+        
+        <div id="startScreen">
+            <h1>🐦 Cappy Fly</h1>
+            <p>Touch screen to fly</p>
+            <p>Avoid the pipes!</p>
+            <button id="startBtn">Cappy Cappa</button>
+        </div>
+        
+        <div id="gameOverScreen" class="hidden">
+            <h1 style="font-size: 36px; margin-bottom: 20px;">Game Over!</h1>
+            <p id="finalScore">Score: 0</p>
+            <p id="finalHighScore">Best: 0</p>
+            <button id="restartBtn">Restart</button>
+            <button id="shareBtn">Share</button>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Web App initialization
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game variables
+        let gameState = 'start'; // start, playing, gameOver
+        let score = 0;
+        let highScore = localStorage.getItem('flappyHighScore') || 0;
+        let frames = 0;
+        
+        // Bird object
+        const bird = {
+            x: 80,
+            y: 250,
+            width: 34,
+            height: 24,
+            velocity: 0,
+            gravity: 0.5,
+            jump: -8,
+            
+            draw() {
+                // Draw simple bird (yellow circle with beak)
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eye
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(this.x + 5, this.y - 5, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Beak
+                ctx.fillStyle = '#FF8C00';
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width/2, this.y);
+                ctx.lineTo(this.x + this.width/2 + 10, this.y - 3);
+                ctx.lineTo(this.x + this.width/2 + 10, this.y + 3);
+                ctx.closePath();
+                ctx.fill();
+            },
+            
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                
+                // Prevent from going off screen
+                if (this.y + this.height/2 >= canvas.height - 50) {
+                    this.y = canvas.height - 50 - this.height/2;
+                    this.velocity = 0;
+                    if (gameState === 'playing') {
+                        gameOver();
+                    }
+                }
+                
+                if (this.y - this.height/2 <= 0) {
+                    this.y = this.height/2;
+                    this.velocity = 0;
+                }
+            },
+            
+            flap() {
+                this.velocity = this.jump;
+            },
+            
+            reset() {
+                this.y = 250;
+                this.velocity = 0;
+            }
+        };
+        
+        // Pipes array
+        const pipes = [];
+        const pipeWidth = 60;
+        const pipeGap = 150;
+        const pipeSpeed = 2;
+        
+        function createPipe() {
+            const minHeight = 50;
+            const maxHeight = canvas.height - pipeGap - 100;
+            const height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+            
+            pipes.push({
+                x: canvas.width,
+                topHeight: height,
+                bottomY: height + pipeGap,
+                width: pipeWidth,
+                passed: false
+            });
+        }
+        
+        function drawPipes() {
+            pipes.forEach(pipe => {
+                // Top pipe
+                ctx.fillStyle = '#5cb85c';
+                ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+                ctx.strokeStyle = '#4a934a';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(pipe.x, 0, pipe.width, pipe.topHeight);
+                
+                // Pipe cap
+                ctx.fillRect(pipe.x - 5, pipe.topHeight - 20, pipe.width + 10, 20);
+                ctx.strokeRect(pipe.x - 5, pipe.topHeight - 20, pipe.width + 10, 20);
+                
+                // Bottom pipe
+                ctx.fillStyle = '#5cb85c';
+                ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, canvas.height - pipe.bottomY);
+                ctx.strokeRect(pipe.x, pipe.bottomY, pipe.width, canvas.height - pipe.bottomY);
+                
+                // Pipe cap
+                ctx.fillRect(pipe.x - 5, pipe.bottomY, pipe.width + 10, 20);
+                ctx.strokeRect(pipe.x - 5, pipe.bottomY, pipe.width + 10, 20);
+            });
+        }
+        
+        function updatePipes() {
+            if (frames % 90 === 0) {
+                createPipe();
+            }
+            
+            pipes.forEach((pipe, index) => {
+                pipe.x -= pipeSpeed;
+                
+                // Check if bird passed the pipe
+                if (!pipe.passed && pipe.x + pipe.width < bird.x) {
+                    pipe.passed = true;
+                    score++;
+                    updateScore();
+                    
+                    // Haptic feedback
+                    if (tg.HapticFeedback) {
+                        tg.HapticFeedback.impactOccurred('light');
+                    }
+                }
+                
+                // Remove off-screen pipes
+                if (pipe.x + pipe.width < 0) {
+                    pipes.splice(index, 1);
+                }
+                
+                // Collision detection
+                if (checkCollision(bird, pipe)) {
+                    gameOver();
+                }
+            });
+        }
+        
+        function checkCollision(bird, pipe) {
+            if (bird.x + bird.width/2 > pipe.x && 
+                bird.x - bird.width/2 < pipe.x + pipe.width) {
+                if (bird.y - bird.height/2 < pipe.topHeight || 
+                    bird.y + bird.height/2 > pipe.bottomY) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        function drawBackground() {
+            // Sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#4ec0ca');
+            gradient.addColorStop(1, '#87ceeb');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(100, 100, 30, 0, Math.PI * 2);
+            ctx.arc(130, 100, 40, 0, Math.PI * 2);
+            ctx.arc(160, 100, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(300, 150, 25, 0, Math.PI * 2);
+            ctx.arc(325, 150, 35, 0, Math.PI * 2);
+            ctx.arc(350, 150, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Ground
+            ctx.fillStyle = '#DEB887';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            
+            // Grass
+            ctx.fillStyle = '#9ACD32';
+            ctx.fillRect(0, canvas.height - 60, canvas.width, 10);
+        }
+        
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('flappyHighScore', highScore);
+                document.getElementById('highScore').textContent = `Best: ${highScore}`;
+            }
+        }
+        
+        function gameLoop() {
+            if (gameState === 'playing') {
+                frames++;
+                
+                drawBackground();
+                drawPipes();
+                updatePipes();
+                bird.update();
+                bird.draw();
+                
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            frames = 0;
+            pipes.length = 0;
+            bird.reset();
+            
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('score').classList.remove('hidden');
+            document.getElementById('highScore').classList.remove('hidden');
+            document.getElementById('highScore').textContent = `Best: ${highScore}`;
+            
+            updateScore();
+            gameLoop();
+        }
+        
+        function gameOver() {
+            if (gameState !== 'playing') return;
+            
+            gameState = 'gameOver';
+            
+            // Haptic feedback
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+            
+            document.getElementById('finalScore').textContent = `Điểm: ${score}`;
+            document.getElementById('finalHighScore').textContent = `Kỷ lục: ${highScore}`;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            
+            // Send score to Telegram bot (if you have a bot set up)
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const userId = tg.initDataUnsafe.user.id;
+                // You can send this to your backend
+                console.log(`User ${userId} scored: ${score}`);
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const shareText = `Tôi vừa đạt ${score} điểm trong Flappy Bird! Bạn có thể đánh bại tôi không? 🐦`;
+            
+            if (tg.shareMessage) {
+                tg.shareMessage(shareText);
+            } else {
+                // Fallback
+                tg.openTelegramLink(`https://t.me/share/url?url=https://t.me/YOUR_BOT_USERNAME&text=${encodeURIComponent(shareText)}`);
+            }
+        });
+        
+        canvas.addEventListener('click', () => {
+            if (gameState === 'playing') {
+                bird.flap();
+                
+                // Haptic feedback
+                if (tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('medium');
+                }
+            }
+        });
+        
+        // Touch event for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState === 'playing') {
+                bird.flap();
+                
+                if (tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('medium');
+                }
+            }
+        });
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameState === 'playing') {
+                e.preventDefault();
+                bird.flap();
+            }
+        });
+        
+        // Initial draw
+        drawBackground();
+        bird.draw();
+        
+        // Set Telegram theme colors
+        if (tg.themeParams) {
+            document.body.style.background = tg.themeParams.bg_color || document.body.style.background;
+        }
+    </script>
+</body>
+</html>
