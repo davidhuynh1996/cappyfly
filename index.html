@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird - Telegram Mini App</title>
+    <title>Cappy Fly - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -122,7 +122,7 @@
         <div id="highScore" class="hidden">Best: 0</div>
         
         <div id="startScreen">
-            <h1>🐦 Cappy Fly</h1>
+            <h1>🐹 Cappy Fly</h1>
             <p>Touch screen to fly</p>
             <p>Avoid the pipes!</p>
             <button id="startBtn">Cappy Cappa</button>
@@ -157,33 +157,49 @@
         const bird = {
             x: 80,
             y: 250,
-            width: 34,
-            height: 24,
+            width: 74,
+            height: 64,
             velocity: 0,
             gravity: 0.5,
             jump: -8,
             
             draw() {
-                // Draw simple bird (yellow circle with beak)
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
-                ctx.fill();
+                // Load and draw capybara image
+                if (!this.image) {
+                    this.image = new Image();
+                    this.image.src = 'data/capybara01.png?' + Date.now(); // Add cache buster
+                    this.image.onload = () => {
+                        console.log('Capybara image loaded successfully!');
+                    };
+                    this.image.onerror = () => {
+                        console.log('Failed to load capybara image - check path and filename!');
+                        console.log('Looking for file at:', this.image.src);
+                    };
+                }
                 
-                // Eye
-                ctx.fillStyle = '#000';
-                ctx.beginPath();
-                ctx.arc(this.x + 5, this.y - 5, 3, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Beak
-                ctx.fillStyle = '#FF8C00';
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.width/2, this.y);
-                ctx.lineTo(this.x + this.width/2 + 10, this.y - 3);
-                ctx.lineTo(this.x + this.width/2 + 10, this.y + 3);
-                ctx.closePath();
-                ctx.fill();
+                if (this.image.complete && this.image.naturalHeight !== 0) {
+                    // Draw the capybara image
+                    ctx.drawImage(
+                        this.image, 
+                        this.x - this.width/2, 
+                        this.y - this.height/2, 
+                        this.width, 
+                        this.height
+                    );
+                } else {
+                    // Fallback capybara-colored circle while image loads
+                    ctx.fillStyle = '#D2B48C'; // Capybara brown color
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Simple face
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(this.x - 5, this.y - 5, 2, 0, Math.PI * 2);
+                    ctx.arc(this.x + 5, this.y - 5, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             },
             
             update() {
@@ -384,8 +400,8 @@
                 tg.HapticFeedback.notificationOccurred('error');
             }
             
-            document.getElementById('finalScore').textContent = `Điểm: ${score}`;
-            document.getElementById('finalHighScore').textContent = `Kỷ lục: ${highScore}`;
+            document.getElementById('finalScore').textContent = `Score: ${score}`;
+            document.getElementById('finalHighScore').textContent = `Highest Score: ${highScore}`;
             document.getElementById('gameOverScreen').classList.remove('hidden');
             
             // Send score to Telegram bot (if you have a bot set up)
@@ -401,7 +417,7 @@
         document.getElementById('restartBtn').addEventListener('click', startGame);
         
         document.getElementById('shareBtn').addEventListener('click', () => {
-            const shareText = `Can you beat me ${score}? Cappy Capa🐦`;
+            const shareText = `Can you beat me ${score}? Cappy Capa🐹`;
             
             if (tg.shareMessage) {
                 tg.shareMessage(shareText);

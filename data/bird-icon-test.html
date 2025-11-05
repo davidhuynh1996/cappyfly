@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird Icon Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .canvas-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #333;
+            background: #4ec0ca;
+            margin: 10px;
+        }
+        h3 {
+            margin: 10px 0 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bird Icon Test - Choose Your Favorite!</h1>
+    
+    <div class="canvas-container">
+        <h3>Option 1: Current Bird (Yellow Circle)</h3>
+        <canvas id="canvas1" width="200" height="150"></canvas>
+    </div>
+    
+    <div class="canvas-container">
+        <h3>Option 2: Bird Emoji 🐦</h3>
+        <canvas id="canvas2" width="200" height="150"></canvas>
+    </div>
+    
+    <div class="canvas-container">
+        <h3>Option 3: Eagle Emoji 🦅</h3>
+        <canvas id="canvas3" width="200" height="150"></canvas>
+    </div>
+    
+    <div class="canvas-container">
+        <h3>Option 4: Dove Emoji 🕊️</h3>
+        <canvas id="canvas4" width="200" height="150"></canvas>
+    </div>
+    
+    <div class="canvas-container">
+        <h3>Option 5: Hamster (closest to capybara) 🐹</h3>
+        <canvas id="canvas5" width="200" height="150"></canvas>
+    </div>
+    
+    <div class="canvas-container">
+        <h3>Option 6: Mouse (capybara-like) �</h3>
+        <canvas id="canvas6" width="200" height="150"></canvas>
+    </div>
+    
+    <div class="canvas-container">
+        <h3>Option 7: Custom Capybara Text "CAPY"</h3>
+        <canvas id="canvas7" width="200" height="150"></canvas>
+    </div>
+    
+    <div class="canvas-container">
+        <h3>Option 8: Simple Capybara Face (ᵔᴥᵔ)</h3>
+        <canvas id="canvas8" width="200" height="150"></canvas>
+    </div>
+
+    <script>
+        // Get all canvases
+        const canvases = [
+            document.getElementById('canvas1'),
+            document.getElementById('canvas2'),
+            document.getElementById('canvas3'),
+            document.getElementById('canvas4'),
+            document.getElementById('canvas5'),
+            document.getElementById('canvas6'),
+            document.getElementById('canvas7'),
+            document.getElementById('canvas8')
+        ];
+
+        // Bird position (center of each canvas)
+        const birdX = 100;
+        const birdY = 75;
+
+        // Option 1: Current Bird (Yellow Circle with beak)
+        function drawCurrentBird(ctx) {
+            // Draw simple bird (yellow circle with beak)
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(birdX, birdY, 17, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Eye
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(birdX + 5, birdY - 5, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Beak
+            ctx.fillStyle = '#FF8C00';
+            ctx.beginPath();
+            ctx.moveTo(birdX + 17, birdY);
+            ctx.lineTo(birdX + 27, birdY - 3);
+            ctx.lineTo(birdX + 27, birdY + 3);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Option 2: Bird Emoji
+        function drawBirdEmoji(ctx) {
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🐦', birdX, birdY + 10);
+        }
+
+        // Option 3: Eagle Emoji
+        function drawEagleEmoji(ctx) {
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🦅', birdX, birdY + 10);
+        }
+
+        // Option 4: Dove Emoji
+        function drawDoveEmoji(ctx) {
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🕊️', birdX, birdY + 10);
+        }
+
+        // Option 5: Hamster Emoji (closest to capybara)
+        function drawHamsterEmoji(ctx) {
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🐹', birdX, birdY + 10);
+        }
+
+        // Option 6: Mouse Emoji
+        function drawMouseEmoji(ctx) {
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('�', birdX, birdY + 10);
+        }
+
+        // Option 7: Custom Capybara Text
+        function drawCapyText(ctx) {
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#8B4513';
+            ctx.fillText('CAPY', birdX, birdY + 5);
+        }
+
+        // Option 8: Capybara Face
+        function drawCapyFace(ctx) {
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('(ᵔᴥᵔ)', birdX, birdY + 5);
+        }
+
+        // Draw all options
+        const drawFunctions = [
+            drawCurrentBird,
+            drawBirdEmoji,
+            drawEagleEmoji,
+            drawDoveEmoji,
+            drawHamsterEmoji,
+            drawMouseEmoji,
+            drawCapyText,
+            drawCapyFace
+        ];
+
+        canvases.forEach((canvas, index) => {
+            const ctx = canvas.getContext('2d');
+            
+            // Clear and set background
+            ctx.fillStyle = '#4ec0ca';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw the bird option
+            drawFunctions[index](ctx);
+        });
+
+        // Add click events to copy code
+        canvases.forEach((canvas, index) => {
+            canvas.addEventListener('click', () => {
+                const codes = [
+                    // Option 1: Current Bird
+                    `draw() {
+    // Draw simple bird (yellow circle with beak)
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(this.x + 5, this.y - 5, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Beak
+    ctx.fillStyle = '#FF8C00';
+    ctx.beginPath();
+    ctx.moveTo(this.x + this.width/2, this.y);
+    ctx.lineTo(this.x + this.width/2 + 10, this.y - 3);
+    ctx.lineTo(this.x + this.width/2 + 10, this.y + 3);
+    ctx.closePath();
+    ctx.fill();
+},`,
+                    // Option 2: Bird Emoji
+                    `draw() {
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🐦', this.x, this.y + 10);
+},`,
+                    // Option 3: Eagle Emoji
+                    `draw() {
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🦅', this.x, this.y + 10);
+},`,
+                    // Option 4: Dove Emoji
+                    `draw() {
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🕊️', this.x, this.y + 10);
+},`,
+                    // Option 5: Hamster Emoji
+                    `draw() {
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🐹', this.x, this.y + 10);
+},`,
+                    // Option 6: Mouse Emoji
+                    `draw() {
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('�', this.x, this.y + 10);
+},`,
+                    // Option 7: Custom Capybara Text
+                    `draw() {
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#8B4513';
+    ctx.fillText('CAPY', this.x, this.y + 5);
+},`,
+                    // Option 8: Capybara Face
+                    `draw() {
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('(ᵔᴥᵔ)', this.x, this.y + 5);
+},`
+                ];
+
+                navigator.clipboard.writeText(codes[index]).then(() => {
+                    alert(`Code for Option ${index + 1} copied to clipboard!\n\nNow you can paste it into your index.html file to replace the draw() method.`);
+                });
+            });
+        });
+    </script>
+
+    <p><strong>Instructions:</strong></p>
+    <ol>
+        <li>Click on any canvas above to copy its code to clipboard</li>
+        <li>Open your index.html file</li>
+        <li>Find the <code>draw()</code> method around line 166</li>
+        <li>Replace the entire method with the copied code</li>
+        <li>Save and test your game!</li>
+    </ol>
+</body>
+</html>
