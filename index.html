@@ -153,20 +153,24 @@
         let highScore = localStorage.getItem('flappyHighScore') || 0;
         let frames = 0;
         
-        // ⭐ ADD DELTA TIME TO STANDARDIZE SPEED
+        // Delta time for consistent speed across different frame rates
         let lastTime = 0;
         const TARGET_FPS = 60;
-        const FRAME_DURATION = 1000 / TARGET_FPS; // ~16.67ms cho 60 FPS
+        const FRAME_DURATION = 1000 / TARGET_FPS; // ~16.67ms for 60 FPS
         let deltaTime = 1;
+        
+        // Time-based pipe spawning for consistent spacing
+        let pipeSpawnTimer = 0;
+        const PIPE_SPAWN_INTERVAL = 1.5; // Create pipe every 1.5 seconds
         
         // Bird object
         const bird = {
             x: 80,
             y: 250,
-            width: 56,
-            height: 46,
+            width: 74,
+            height: 64,
             velocity: 0,
-            // ⭐ ADJUST VALUES FOR STANDARD 60 FPS
+            // Physics values tuned for 60 FPS
             gravity: 0.5,
             jump: -8,
             
@@ -209,7 +213,7 @@
             },
             
             update() {
-                // ⭐ MULTIPLY BY DELTA TIME TO STANDARDIZE
+                // Apply delta time for frame rate independence
                 this.velocity += this.gravity * deltaTime;
                 this.y += this.velocity * deltaTime;
                 
@@ -242,7 +246,7 @@
         const pipes = [];
         const pipeWidth = 60;
         const pipeGap = 150;
-        const pipeSpeed = 2; // ⭐ BASE SPEED FOR 60 FPS
+        const pipeSpeed = 2; // Base speed for 60 FPS
         
         function createPipe() {
             const minHeight = 50;
@@ -283,12 +287,16 @@
         }
         
         function updatePipes() {
-            if (frames % 90 === 0) {
+            // Time-based pipe spawning instead of frame-based
+            pipeSpawnTimer += deltaTime / TARGET_FPS; // Increment timer in seconds
+            
+            if (pipeSpawnTimer >= PIPE_SPAWN_INTERVAL) {
                 createPipe();
+                pipeSpawnTimer = 0; // Reset timer
             }
             
             pipes.forEach((pipe, index) => {
-                // ⭐ MULTIPLY DELTA TIME
+                // Apply delta time to pipe movement
                 pipe.x -= pipeSpeed * deltaTime;
                 
                 // Check if bird passed the pipe
@@ -367,19 +375,19 @@
             }
         }
         
-        // ⭐ GAME LOOP WITH DELTA TIME
+        // Game loop with delta time
         function gameLoop(currentTime) {
             if (gameState === 'playing') {
-                // Tính delta time
+                // Calculate delta time
                 if (lastTime === 0) {
                     lastTime = currentTime;
                 }
                 const elapsed = currentTime - lastTime;
                 
-                // ⭐ STANDARDIZE DELTA TIME BASE ON 60 FPS
-                // deltaTime = 1 WHEN 60 FPS
-                // deltaTime > 1 WHEN FPS LESS THAN 60
-                // deltaTime < 1 WHEN FPS GREATHER THAN 60
+                // Normalize delta time based on 60 FPS
+                // deltaTime = 1.0 when running at exactly 60 FPS
+                // deltaTime > 1.0 when FPS is lower than 60
+                // deltaTime < 1.0 when FPS is higher than 60
                 deltaTime = elapsed / FRAME_DURATION;
                 
                 // Limit deltaTime to avoid large jumps
@@ -404,8 +412,9 @@
             frames = 0;
             pipes.length = 0;
             bird.reset();
-            lastTime = 0; // ⭐ RESET TIMER
+            lastTime = 0; // Reset timer
             deltaTime = 1;
+            pipeSpawnTimer = 0; // Reset pipe spawn timer
             
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
@@ -414,7 +423,7 @@
             document.getElementById('highScore').textContent = `Best: ${highScore}`;
             
             updateScore();
-            gameLoop(0);
+            requestAnimationFrame(gameLoop); // Browser automatically passes timestamp
         }
         
         function gameOver() {
@@ -448,8 +457,8 @@
             if (tg.shareMessage) {
                 tg.shareMessage(shareText);
             } else {
-                // Fallback - Replace YOUR_BOT_USERNAME
-                tg.openTelegramLink(`https://t.me/share/url?url=https://t.me/cappy_fly_games&text=${encodeURIComponent(shareText)}`);
+                // Fallback - Replace YOUR_BOT_USERNAME with your actual bot username
+                tg.openTelegramLink(`https://t.me/share/url?url=https://t.me/YOUR_BOT_USERNAME&text=${encodeURIComponent(shareText)}`);
             }
         });
         
