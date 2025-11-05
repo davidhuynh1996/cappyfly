@@ -122,18 +122,18 @@
         <div id="highScore" class="hidden">Best: 0</div>
         
         <div id="startScreen">
-            <h1>🐦 Flappy Bird</h1>
-            <p>Nhấn vào màn hình để bay</p>
-            <p>Tránh các ống nước!</p>
-            <button id="startBtn">Bắt Đầu</button>
+            <h1>🐦 Cappy Fly</h1>
+            <p>Touch screen to fly</p>
+            <p>Avoid the pipes!</p>
+            <button id="startBtn">Cappy Cappa</button>
         </div>
         
         <div id="gameOverScreen" class="hidden">
             <h1 style="font-size: 36px; margin-bottom: 20px;">Game Over!</h1>
-            <p id="finalScore">Điểm: 0</p>
-            <p id="finalHighScore">Kỷ lục: 0</p>
-            <button id="restartBtn">Chơi Lại</button>
-            <button id="shareBtn">Chia Sẻ</button>
+            <p id="finalScore">Score: 0</p>
+            <p id="finalHighScore">Best: 0</p>
+            <button id="restartBtn">Restart</button>
+            <button id="shareBtn">Share</button>
         </div>
     </div>
 
@@ -401,7 +401,7 @@
         document.getElementById('restartBtn').addEventListener('click', startGame);
         
         document.getElementById('shareBtn').addEventListener('click', () => {
-            const shareText = `Tôi vừa đạt ${score} điểm trong Flappy Bird! Bạn có thể đánh bại tôi không? 🐦`;
+            const shareText = `Can you beat me ${score}? Cappy Capa🐦`;
             
             if (tg.shareMessage) {
                 tg.shareMessage(shareText);
