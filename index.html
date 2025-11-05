@@ -153,6 +153,12 @@
         let highScore = localStorage.getItem('flappyHighScore') || 0;
         let frames = 0;
         
+        // ⭐ ADD DELTA TIME TO STANDARDIZE SPEED
+        let lastTime = 0;
+        const TARGET_FPS = 60;
+        const FRAME_DURATION = 1000 / TARGET_FPS; // ~16.67ms cho 60 FPS
+        let deltaTime = 1;
+        
         // Bird object
         const bird = {
             x: 80,
@@ -160,6 +166,7 @@
             width: 74,
             height: 64,
             velocity: 0,
+            // ⭐ ADJUST VALUES FOR STANDARD 60 FPS
             gravity: 0.5,
             jump: -8,
             
@@ -167,7 +174,7 @@
                 // Load and draw capybara image
                 if (!this.image) {
                     this.image = new Image();
-                    this.image.src = 'data/capybara01.png?' + Date.now(); // Add cache buster
+                    this.image.src = 'data/capybara01.png?' + Date.now();
                     this.image.onload = () => {
                         console.log('Capybara image loaded successfully!');
                     };
@@ -178,7 +185,6 @@
                 }
                 
                 if (this.image.complete && this.image.naturalHeight !== 0) {
-                    // Draw the capybara image
                     ctx.drawImage(
                         this.image, 
                         this.x - this.width/2, 
@@ -188,7 +194,7 @@
                     );
                 } else {
                     // Fallback capybara-colored circle while image loads
-                    ctx.fillStyle = '#D2B48C'; // Capybara brown color
+                    ctx.fillStyle = '#D2B48C';
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
                     ctx.fill();
@@ -203,8 +209,9 @@
             },
             
             update() {
-                this.velocity += this.gravity;
-                this.y += this.velocity;
+                // ⭐ MULTIPLY BY DELTA TIME TO STANDARDIZE
+                this.velocity += this.gravity * deltaTime;
+                this.y += this.velocity * deltaTime;
                 
                 // Prevent from going off screen
                 if (this.y + this.height/2 >= canvas.height - 50) {
@@ -231,11 +238,11 @@
             }
         };
         
-        // Pipes array
+        // Pipes
         const pipes = [];
         const pipeWidth = 60;
         const pipeGap = 150;
-        const pipeSpeed = 2;
+        const pipeSpeed = 2; // ⭐ BASE SPEED FOR 60 FPS
         
         function createPipe() {
             const minHeight = 50;
@@ -281,7 +288,8 @@
             }
             
             pipes.forEach((pipe, index) => {
-                pipe.x -= pipeSpeed;
+                // ⭐ MULTIPLY DELTA TIME
+                pipe.x -= pipeSpeed * deltaTime;
                 
                 // Check if bird passed the pipe
                 if (!pipe.passed && pipe.x + pipe.width < bird.x) {
@@ -359,8 +367,25 @@
             }
         }
         
-        function gameLoop() {
+        // ⭐ GAME LOOP WITH DELTA TIME
+        function gameLoop(currentTime) {
             if (gameState === 'playing') {
+                // Tính delta time
+                if (lastTime === 0) {
+                    lastTime = currentTime;
+                }
+                const elapsed = currentTime - lastTime;
+                
+                // ⭐ STANDARDIZE DELTA TIME BASE ON 60 FPS
+                // deltaTime = 1 WHEN 60 FPS
+                // deltaTime > 1 WHEN FPS LESS THAN 60
+                // deltaTime < 1 WHEN FPS GREATHER THAN 60
+                deltaTime = elapsed / FRAME_DURATION;
+                
+                // Limit deltaTime to avoid large jumps
+                if (deltaTime > 3) deltaTime = 3;
+                
+                lastTime = currentTime;
                 frames++;
                 
                 drawBackground();
@@ -379,6 +404,8 @@
             frames = 0;
             pipes.length = 0;
             bird.reset();
+            lastTime = 0; // ⭐ RESET TIMER
+            deltaTime = 1;
             
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
@@ -387,7 +414,7 @@
             document.getElementById('highScore').textContent = `Best: ${highScore}`;
             
             updateScore();
-            gameLoop();
+            gameLoop(0);
         }
         
         function gameOver() {
@@ -407,7 +434,6 @@
             // Send score to Telegram bot (if you have a bot set up)
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const userId = tg.initDataUnsafe.user.id;
-                // You can send this to your backend
                 console.log(`User ${userId} scored: ${score}`);
             }
         }
@@ -422,7 +448,7 @@
             if (tg.shareMessage) {
                 tg.shareMessage(shareText);
             } else {
-                // Fallback
+                // Fallback - Replace YOUR_BOT_USERNAME
                 tg.openTelegramLink(`https://t.me/share/url?url=https://t.me/YOUR_BOT_USERNAME&text=${encodeURIComponent(shareText)}`);
             }
         });
@@ -431,7 +457,6 @@
             if (gameState === 'playing') {
                 bird.flap();
                 
-                // Haptic feedback
                 if (tg.HapticFeedback) {
                     tg.HapticFeedback.impactOccurred('medium');
                 }
